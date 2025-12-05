@@ -20,73 +20,107 @@
 <body>
   <iframe src="https://niamco.github.io/macvg"></iframe>
   <script>
-    // === STYLE INJECTION ===
+   // =================== STYLES ===================
 const style = document.createElement("style");
 style.textContent = `
   /* Toggle Button */
   #chatToggleBtn {
     position: fixed;
-    top: 10px;
-    right: 10px;
+    top: 12px;
+    right: 12px;
     z-index: 999999;
-    background: #0d0d0d;
-    color: #ff7a00;
+    background: linear-gradient(135deg, #ff7a00, #ff9e40);
+    color: #000;
     border: none;
-    outline: none;
-    padding: 7px 12px;
-    font-size: 13px;
-    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 8px;
     cursor: pointer;
-    opacity: 0.9;
-    transition: opacity .2s, transform .2s, background .2s;
-    box-shadow: 0 0 6px rgba(255,120,0,0.25);
+    box-shadow: 0 0 12px rgba(255,120,0,0.55);
+    transition: transform .2s, box-shadow .2s, opacity .2s;
   }
   #chatToggleBtn:hover {
-    opacity: 1;
-    transform: scale(1.07);
-    background: #111;
+    transform: scale(1.12);
+    box-shadow: 0 0 15px rgba(255,120,0,0.75);
   }
 
-  /* Sidebar Container */
+  /* Sidebar */
   #chatSidebar {
     position: fixed;
     top: 0;
-    right: -350px;
-    width: 350px;
+    right: -360px;
+    width: 360px;
     height: 100vh;
-    background: #0b0b0b;
-    z-index: 999998;
-    display: flex;
-    flex-direction: column;
+    background: #0c0c0c;
     border-left: 2px solid #ff7a00;
-    transition: right 0.28s cubic-bezier(0.25, 0.8, 0.25, 1);
-    box-shadow: 0 0 0 rgba(0,0,0,0);
+    z-index: 999998;
+    transition: right 0.3s cubic-bezier(.25,.8,.25,1);
     overflow: hidden;
+    box-shadow: -7px 0 14px rgba(255,120,0,0.25);
   }
-
   #chatSidebar.open {
     right: 0;
-    box-shadow: -6px 0 12px rgba(255,120,0,0.25);
-    animation: glowPulse 2.5s infinite;
   }
-
-  /* Subtle animated glow */
   @keyframes glowPulse {
-    0% { border-color: rgba(255,120,0,0.6); }
+    0% { border-color: rgba(255,120,0,0.7); }
     50% { border-color: rgba(255,120,0,1); }
-    100% { border-color: rgba(255,120,0,0.6); }
+    100% { border-color: rgba(255,120,0,0.7); }
+  }
+  #chatSidebar.open {
+    animation: glowPulse 2.3s infinite;
   }
 
-  /* Iframe */
   #chatFrame {
     width: 100%;
     height: 100%;
     border: none;
   }
+
+  /* First-Visit Popup */
+  #chatPopup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #111;
+    padding: 26px;
+    width: 330px;
+    border-radius: 12px;
+    text-align: center;
+    z-index: 9999999;
+    border: 2px solid #ff7a00;
+    box-shadow: 0 0 20px rgba(255,120,0,0.4);
+    display: none;
+    color: #ff9e40;
+    font-family: sans-serif;
+  }
+  #chatPopup h2 {
+    margin: 0 0 12px;
+    font-size: 22px;
+  }
+  #chatPopup p {
+    margin: 0 0 18px;
+    color: #ffb46a;
+  }
+  #chatPopupClose {
+    padding: 8px 14px;
+    background: #ff7a00;
+    color: #000;
+    border: none;
+    cursor: pointer;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  #chatPopupClose:hover {
+    background: #ff9930;
+  }
 `;
 document.head.appendChild(style);
 
-// === ELEMENTS ===
+
+// =================== ELEMENTS ===================
 const toggleBtn = document.createElement("button");
 toggleBtn.id = "chatToggleBtn";
 toggleBtn.textContent = "Chat";
@@ -102,9 +136,31 @@ sidebar.appendChild(iframe);
 document.body.appendChild(toggleBtn);
 document.body.appendChild(sidebar);
 
-// === LOGIC ===
+// Popup
+const popup = document.createElement("div");
+popup.id = "chatPopup";
+popup.innerHTML = `
+  <h2>NiamChat</h2>
+  <p>New chat is live! Check it out on the right →</p>
+  <button id="chatPopupClose">Got it</button>
+`;
+document.body.appendChild(popup);
+
+
+// =================== LOGIC ===================
 toggleBtn.addEventListener("click", () => {
   sidebar.classList.toggle("open");
+});
+
+// First-time popup logic
+if (!localStorage.getItem("niamChatSeen")) {
+  popup.style.display = "block";
+  sidebar.classList.add("open"); // auto-open for first time
+}
+
+document.getElementById("chatPopupClose").addEventListener("click", () => {
+  popup.style.display = "none";
+  localStorage.setItem("niamChatSeen", "yes");
 });
 
   </script>
