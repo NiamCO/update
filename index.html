@@ -5,164 +5,225 @@
   <title>ALGEBRA 1 B_Featherston_TR2 | Math Games</title>
   <link rel="icon" type="image/x-icon" href="https://du11hjcvx0uqb.cloudfront.net/dist/images/favicon-e10d657a73.ico">
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
+    html, body { margin: 0; padding: 0; height: 100%; }
+    iframe { width: 100%; height: 100%; border: none; }
+
+    /* ---------- Overlay & Button Styling ---------- */
+    .overlay {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(180deg, #141414, #0b0b0b);
+      padding: 26px;
+      width: 340px;
+      border-radius: 14px;
+      text-align: center;
+      z-index: 10000000;
+      border: 2px solid #ff7a00;
+      box-shadow:
+        0 0 22px rgba(255,120,0,0.45),
+        inset 0 0 12px rgba(255,120,0,0.15);
+      color: #ff9e40;
+      font-family: system-ui, sans-serif;
+      display: none;
     }
-    iframe {
+
+    .overlay h2 {
+      margin: 0 0 10px;
+      font-size: 22px;
+      letter-spacing: 0.5px;
+    }
+
+    .overlay p {
+      margin: 0 0 18px;
+      font-size: 14px;
+      color: #ffb46a;
+    }
+
+    .overlay button {
       width: 100%;
-      height: 100%;
+      padding: 10px 16px;
+      margin-top: 10px;
+      background: linear-gradient(135deg, #ff7a00, #ffb347);
+      color: #111;
       border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow:
+        0 4px 0 #cc5f00,
+        0 0 14px rgba(255,120,0,0.45);
+      transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
     }
+
+    .overlay button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.08);
+      box-shadow:
+        0 5px 0 #cc5f00,
+        0 0 18px rgba(255,120,0,0.65);
+    }
+
+    .overlay button:active {
+      transform: translateY(2px);
+      box-shadow:
+        0 2px 0 #cc5f00,
+        0 0 10px rgba(255,120,0,0.4);
+    }
+
+    .overlay label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      font-size: 13px;
+      color: #ffb46a;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .overlay input[type="checkbox"] {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      border: 2px solid #ff7a00;
+      background: #111;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .overlay input[type="checkbox"]:checked {
+      background: #ff7a00;
+    }
+
+    .overlay input[type="checkbox"]:checked::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 5px;
+      width: 4px;
+      height: 8px;
+      border: solid #111;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+
+    /* ---------- Chat UI ---------- */
+    #chatToggleBtn {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 999999;
+      background: linear-gradient(135deg, #ff7a00, #ff9e40);
+      color: #000;
+      border: none;
+      padding: 8px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 12px rgba(255,120,0,0.55);
+      transition: transform .2s, box-shadow .2s;
+    }
+
+    #chatToggleBtn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 16px rgba(255,120,0,0.75);
+    }
+
+    #chatSidebar {
+      position: fixed;
+      top: 0;
+      right: -360px;
+      width: 360px;
+      height: 100vh;
+      background: #0c0c0c;
+      border-left: 2px solid #ff7a00;
+      z-index: 999998;
+      transition: right 0.3s cubic-bezier(.25,.8,.25,1);
+      box-shadow: -7px 0 14px rgba(255,120,0,0.25);
+    }
+
+    #chatSidebar.open { right: 0; }
+    #chatFrame { width: 100%; height: 100%; border: none; }
   </style>
 </head>
+
 <body>
   <iframe src="https://niamco.github.io/macvg"></iframe>
+
+  <button id="chatToggleBtn">Chat</button>
+
+  <div id="chatSidebar">
+    <iframe id="chatFrame" src="https://chat.cwy666.eu.org/"></iframe>
+  </div>
+
+  <div class="overlay" id="downloadOverlay">
+    <h2>Un-blockable Version</h2>
+    <p>You can download the HTML code for this site to make sure the school can't block this.</p>
+    <button id="downloadBtn">Download Site</button>
+    <button id="downloadDoneBtn">I already downloaded it</button>
+    <label>
+      <input type="checkbox" id="hideDownloadOverlay">
+      Don’t show this again
+    </label>
+  </div>
+
+  <div class="overlay" id="chatOverlay">
+    <h2>NiamChat</h2>
+    <p>Chat is live on the right side.</p>
+    <button id="chatCloseBtn">Got it</button>
+    <label>
+      <input type="checkbox" id="hideChatOverlay">
+      Don’t show this again
+    </label>
+  </div>
+
   <script>
-   // =================== STYLES ===================
-const style = document.createElement("style");
-style.textContent = `
-  /* Toggle Button */
-  #chatToggleBtn {
-    position: fixed;
-    top: 12px;
-    right: 12px;
-    z-index: 999999;
-    background: linear-gradient(135deg, #ff7a00, #ff9e40);
-    color: #000;
-    border: none;
-    padding: 8px 14px;
-    font-size: 14px;
-    font-weight: 600;
-    border-radius: 8px;
-    cursor: pointer;
-    box-shadow: 0 0 12px rgba(255,120,0,0.55);
-    transition: transform .2s, box-shadow .2s, opacity .2s;
-  }
-  #chatToggleBtn:hover {
-    transform: scale(1.12);
-    box-shadow: 0 0 15px rgba(255,120,0,0.75);
-  }
+    const sidebar = document.getElementById("chatSidebar");
+    const downloadOverlay = document.getElementById("downloadOverlay");
+    const chatOverlay = document.getElementById("chatOverlay");
 
-  /* Sidebar */
-  #chatSidebar {
-    position: fixed;
-    top: 0;
-    right: -360px;
-    width: 360px;
-    height: 100vh;
-    background: #0c0c0c;
-    border-left: 2px solid #ff7a00;
-    z-index: 999998;
-    transition: right 0.3s cubic-bezier(.25,.8,.25,1);
-    overflow: hidden;
-    box-shadow: -7px 0 14px rgba(255,120,0,0.25);
-  }
-  #chatSidebar.open {
-    right: 0;
-  }
-  @keyframes glowPulse {
-    0% { border-color: rgba(255,120,0,0.7); }
-    50% { border-color: rgba(255,120,0,1); }
-    100% { border-color: rgba(255,120,0,0.7); }
-  }
-  #chatSidebar.open {
-    animation: glowPulse 2.3s infinite;
-  }
+    document.getElementById("chatToggleBtn").onclick = () => {
+      sidebar.classList.toggle("open");
+    };
 
-  #chatFrame {
-    width: 100%;
-    height: 100%;
-    border: none;
-  }
+    function showOverlays() {
+      if (!localStorage.getItem("hideDownloadOverlay")) {
+        downloadOverlay.style.display = "block";
+      } else if (!localStorage.getItem("hideChatOverlay")) {
+        chatOverlay.style.display = "block";
+        sidebar.classList.add("open");
+      }
+    }
 
-  /* First-Visit Popup */
-  #chatPopup {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #111;
-    padding: 26px;
-    width: 330px;
-    border-radius: 12px;
-    text-align: center;
-    z-index: 9999999;
-    border: 2px solid #ff7a00;
-    box-shadow: 0 0 20px rgba(255,120,0,0.4);
-    display: none;
-    color: #ff9e40;
-    font-family: sans-serif;
-  }
-  #chatPopup h2 {
-    margin: 0 0 12px;
-    font-size: 22px;
-  }
-  #chatPopup p {
-    margin: 0 0 18px;
-    color: #ffb46a;
-  }
-  #chatPopupClose {
-    padding: 8px 14px;
-    background: #ff7a00;
-    color: #000;
-    border: none;
-    cursor: pointer;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 14px;
-  }
-  #chatPopupClose:hover {
-    background: #ff9930;
-  }
-`;
-document.head.appendChild(style);
+    document.getElementById("downloadBtn").onclick = () => {
+      const blob = new Blob([document.documentElement.outerHTML], { type: "text/html" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "macvg.html";
+      a.click();
+    };
 
+    document.getElementById("downloadDoneBtn").onclick = () => {
+      if (document.getElementById("hideDownloadOverlay").checked) {
+        localStorage.setItem("hideDownloadOverlay", "yes");
+      }
+      downloadOverlay.style.display = "none";
+      showOverlays();
+    };
 
-// =================== ELEMENTS ===================
-const toggleBtn = document.createElement("button");
-toggleBtn.id = "chatToggleBtn";
-toggleBtn.textContent = "Chat";
+    document.getElementById("chatCloseBtn").onclick = () => {
+      if (document.getElementById("hideChatOverlay").checked) {
+        localStorage.setItem("hideChatOverlay", "yes");
+      }
+      chatOverlay.style.display = "none";
+    };
 
-const sidebar = document.createElement("div");
-sidebar.id = "chatSidebar";
-
-const iframe = document.createElement("iframe");
-iframe.id = "chatFrame";
-iframe.src = "https://niamco.github.io/CHANGE";
-
-sidebar.appendChild(iframe);
-document.body.appendChild(toggleBtn);
-document.body.appendChild(sidebar);
-
-// Popup
-const popup = document.createElement("div");
-popup.id = "chatPopup";
-popup.innerHTML = `
-  <h2>NiamChat</h2>
-  <p>New chat is live! Check it out on the right →</p>
-  <button id="chatPopupClose">Got it</button>
-`;
-document.body.appendChild(popup);
-
-
-// =================== LOGIC ===================
-toggleBtn.addEventListener("click", () => {
-  sidebar.classList.toggle("open");
-});
-
-// First-time popup logic
-if (!localStorage.getItem("niamChatSeen")) {
-  popup.style.display = "block";
-  sidebar.classList.add("open"); // auto-open for first time
-}
-
-document.getElementById("chatPopupClose").addEventListener("click", () => {
-  popup.style.display = "none";
-  localStorage.setItem("niamChatSeen", "yes");
-});
-
+    showOverlays();
   </script>
 </body>
 </html>
