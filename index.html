@@ -113,27 +113,45 @@
 
     /* ---------- Chat UI ---------- */
     #chatToggleBtn {
-      position: fixed;
-      top: 12px;
-      right: 12px;
-      z-index: 999999;
-      background: linear-gradient(135deg, #ff7a00, #ff9e40);
-      color: #000;
-      border: none;
-      padding: 8px 14px;
-      font-size: 14px;
-      font-weight: 600;
-      border-radius: 8px;
-      cursor: pointer;
-      box-shadow: 0 0 12px rgba(255,120,0,0.55);
-      transition: transform .2s, box-shadow .2s;
-    }
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 999999;
 
-    #chatToggleBtn:hover {
-      transform: scale(1.1);
-      box-shadow: 0 0 16px rgba(255,120,0,0.75);
-    }
+  background: rgba(255, 122, 0, 0.35); /* see-through */
+  backdrop-filter: blur(6px);
 
+  color: #ffb46a;
+  border: 1px solid rgba(255, 122, 0, 0.6);
+
+  padding: 4px 8px;          /* MUCH smaller */
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 0 6px rgba(255,120,0,0.45),
+    0 0 12px rgba(255,120,0,0.25);
+
+  transition:
+    opacity .15s ease,
+    transform .15s ease,
+    box-shadow .15s ease;
+}
+
+#chatToggleBtn:hover {
+  opacity: 1;
+  transform: scale(1.05);
+  box-shadow:
+    0 0 10px rgba(255,120,0,0.65),
+    0 0 18px rgba(255,120,0,0.4);
+}
+
+#chatToggleBtn:active {
+  transform: scale(0.95);
+}
     #chatSidebar {
       position: fixed;
       top: 0;
