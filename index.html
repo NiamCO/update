@@ -2,13 +2,13 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>.</title>
-  <link rel="icon" href="https://uiverse.io/favicon-32x32.png" type="image/png" sizes="32x32"/>
+  <title>Dashboard</title>
+  <link rel="icon" type="image/x-icon" href="https://du11hjcvx0uqb.cloudfront.net/dist/images/favicon-e10d657a73.ico" />
   <style>
     html, body { margin: 0; padding: 0; height: 100%; }
     iframe { width: 100%; height: 100%; border: none; }
 
-    /* ---------- Overlay & Button Styling ---------- */
+    /* ---------- Overlay Styling ---------- */
     .overlay {
       position: fixed;
       top: 50%;
@@ -113,46 +113,36 @@
 
     /* ---------- Chat UI ---------- */
     #chatToggleBtn {
-  position: fixed;
-  top: 8px;
-  right: 8px;
-  z-index: 999999;
+      position: fixed;
+      top: 8px;
+      right: 8px;
+      z-index: 999999;
+      background: transparent;
+      color: rgba(255, 180, 106, 0.8);
+      border: none;
+      padding: 2px 4px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      cursor: pointer;
+      text-shadow:
+        0 0 4px rgba(255,120,0,0.6),
+        0 0 8px rgba(255,120,0,0.4);
+      opacity: 0.6;
+      transition: opacity .15s ease, transform .15s ease, text-shadow .15s ease;
+    }
 
-  background: transparent;      /* FULLY see-through */
-  color: rgba(255, 180, 106, 0.8);
+    #chatToggleBtn:hover {
+      opacity: 1;
+      transform: scale(1.08);
+      text-shadow:
+        0 0 6px rgba(255,120,0,0.9),
+        0 0 14px rgba(255,120,0,0.6);
+    }
 
-  border: none;
-
-  padding: 2px 4px;             /* tiny */
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.4px;
-
-  cursor: pointer;
-
-  text-shadow:
-    0 0 4px rgba(255,120,0,0.6),
-    0 0 8px rgba(255,120,0,0.4);
-
-  opacity: 0.6;
-
-  transition:
-    opacity .15s ease,
-    transform .15s ease,
-    text-shadow .15s ease;
-}
-
-#chatToggleBtn:hover {
-  opacity: 1;
-  transform: scale(1.08);
-  text-shadow:
-    0 0 6px rgba(255,120,0,0.9),
-    0 0 14px rgba(255,120,0,0.6);
-}
-
-#chatToggleBtn:active {
-  transform: scale(0.92);
-}
+    #chatToggleBtn:active {
+      transform: scale(0.92);
+    }
 
     #chatSidebar {
       position: fixed;
@@ -181,69 +171,47 @@
     <iframe id="chatFrame" src="https://niamco.github.io/macvg-chat/"></iframe>
   </div>
 
-  <div class="overlay" id="downloadOverlay">
-    <h2>Offline Access</h2>
-    <p>You can download a local copy of this site for offline use.</p>
-    <button id="downloadBtn">Download Site</button>
-    <button id="downloadDoneBtn">I already downloaded it</button>
+  <!-- Business Promo Overlay -->
+  <div class="overlay" id="businessOverlay">
+    <h2>Need a Custom Website?</h2>
+    <p>I build clean, high-quality websites for gamers, creators, and small projects. Affordable. Fast. Designed to stand out.</p>
+    <button id="visitBusinessBtn">Visit PixelForge</button>
+    <button id="businessCloseBtn">Maybe Later</button>
     <label>
-      <input type="checkbox" id="hideDownloadOverlay">
-      Don’t show this again
-    </label>
-  </div>
-
-  <div class="overlay" id="chatOverlay">
-    <h2>NiamChat</h2>
-    <p>Chat is live on the right side.</p>
-    <button id="chatCloseBtn">Got it</button>
-    <label>
-      <input type="checkbox" id="hideChatOverlay">
+      <input type="checkbox" id="hideBusinessOverlay">
       Don’t show this again
     </label>
   </div>
 
   <script>
     const sidebar = document.getElementById("chatSidebar");
-    const downloadOverlay = document.getElementById("downloadOverlay");
-    const chatOverlay = document.getElementById("chatOverlay");
+    const businessOverlay = document.getElementById("businessOverlay");
 
     document.getElementById("chatToggleBtn").onclick = () => {
       sidebar.classList.toggle("open");
     };
 
-    function showOverlays() {
-      if (!localStorage.getItem("hideDownloadOverlay")) {
-        downloadOverlay.style.display = "block";
-      } else if (!localStorage.getItem("hideChatOverlay")) {
-        chatOverlay.style.display = "block";
-        sidebar.classList.add("open");
+    // Show business popup after short delay
+    setTimeout(() => {
+      if (!localStorage.getItem("hideBusinessOverlay")) {
+        businessOverlay.style.display = "block";
       }
-    }
+    }, 2000);
 
-    document.getElementById("downloadBtn").onclick = () => {
-      const blob = new Blob([document.documentElement.outerHTML], { type: "text/html" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "https://niamco.github.io/update/index.html";
-      a.click();
+    document.getElementById("visitBusinessBtn").onclick = () => {
+      window.open("https://niamco.github.io/", "_blank"); 
+      if (document.getElementById("hideBusinessOverlay").checked) {
+        localStorage.setItem("hideBusinessOverlay", "yes");
+      }
+      businessOverlay.style.display = "none";
     };
 
-    document.getElementById("downloadDoneBtn").onclick = () => {
-      if (document.getElementById("hideDownloadOverlay").checked) {
-        localStorage.setItem("hideDownloadOverlay", "yes");
+    document.getElementById("businessCloseBtn").onclick = () => {
+      if (document.getElementById("hideBusinessOverlay").checked) {
+        localStorage.setItem("hideBusinessOverlay", "yes");
       }
-      downloadOverlay.style.display = "none";
-      showOverlays();
+      businessOverlay.style.display = "none";
     };
-
-    document.getElementById("chatCloseBtn").onclick = () => {
-      if (document.getElementById("hideChatOverlay").checked) {
-        localStorage.setItem("hideChatOverlay", "yes");
-      }
-      chatOverlay.style.display = "none";
-    };
-
-    showOverlays();
   </script>
 </body>
 </html>
