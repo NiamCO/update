@@ -293,69 +293,15 @@
 <body>
   <iframe src="https://niamco.github.io/macvg"></iframe>
 
-  <button id="chatToggleBtn">Chat Open/Close</button>
+  
 
-  <div id="chatSidebar">
-    <iframe id="chatFrame" src="https://niamco.github.io/macvg-chat/"></iframe>
-  </div>
-
-  <!-- Minecraft Update Overlay -->
-  <div class="overlay" id="updateOverlay">
-    <div class="sparkles">✨</div>
-    <div class="update-badge">🎮 MASSIVE UPDATE!</div>
-    <h2>GAMBLING GAME COMING SOON</h2>
-    <p><strong>COMING SOON</strong></p>
-    
-    <ul class="feature-list">
-      <li style="--i: 0">🎰 <strong>SLOTS MACHINE</strong> - Spin to win BIG!</li>
-      <li style="--i: 1">📦 <strong>25 EPIC CASES</strong> - God Case with $300K items!</li>
-      <li style="--i: 2">✨ <strong>SPARKLE EFFECTS</strong> - Rare items GLOW!</li>
-      <li style="--i: 3">🏆 <strong>20 ACHIEVEMENTS</strong> - Unlock them all!</li>
-      <li style="--i: 4">📄 <strong>INVENTORY PAGES</strong> - No more scrolling!</li>
-      <li style="--i: 5">💎 <strong>NEW ITEMS</strong> - Cosmic Armor, Dragon Eggs & more!</li>
-    </ul>
-
-    <p style="color: #fbbf24; font-weight: 700; margin-top: 20px;">
-      🔥 Play NOW and get started with $100! 🔥
-    </p>
-
-    <button id="playNowBtn">PLAY NOW! 🚀</button>
-    <button id="updateCloseBtn" class="close-btn">Maybe Later</button>
-    <label>
-      <input type="checkbox" id="hideUpdateOverlay">
-      Don't show this again
-    </label>
-  </div>
-
+ 
+ 
   <script>
     const sidebar = document.getElementById("chatSidebar");
-    const updateOverlay = document.getElementById("updateOverlay");
+    
 
-    document.getElementById("chatToggleBtn").onclick = () => {
-      sidebar.classList.toggle("open");
-    };
-
-    // Show epic update popup after short delay
-    setTimeout(() => {
-      if (!localStorage.getItem("hideUpdateOverlay")) {
-        updateOverlay.style.display = "block";
-      }
-    }, 1500);
-
-    document.getElementById("playNowBtn").onclick = () => {
-      // Change this URL to wherever your case simulator is hosted
-      window.location.href = "/case-sim/"; // or "case-sim.html" or full URL
-      if (document.getElementById("hideUpdateOverlay").checked) {
-        localStorage.setItem("hideUpdateOverlay", "yes");
-      }
-    };
-
-    document.getElementById("updateCloseBtn").onclick = () => {
-      if (document.getElementById("hideUpdateOverlay").checked) {
-        localStorage.setItem("hideUpdateOverlay", "yes");
-      }
-      updateOverlay.style.display = "none";
-    };
+    
   </script>
 </body>
 </html>
