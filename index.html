@@ -85,38 +85,66 @@
       closeBtn.addEventListener('click', () => {
         popup.classList.remove('show');
       });
+  </script>
+  <!-- Firebase SDK -->
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
 
-      runAnalytics();
-    });
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyDGsf7-Gz4QDO-5EqxPLD_TUzyLyavRedQ",
+    authDomain: "macvg-analytics.firebaseapp.com",
+    projectId: "macvg-analytics",
+    storageBucket: "macvg-analytics.firebasestorage.app",
+    messagingSenderId: "976855922439",
+    appId: "1:976855922439:web:e091863ce7174587db77a2"
+  };
 
-    // ----------- ANALYTICS FUNCTION -----------
-    function runAnalytics() {
-      const visitTime = new Date();
 
-      let visits = localStorage.getItem("visits");
-      visits = visits ? parseInt(visits) + 1 : 1;
-      localStorage.setItem("visits", visits);
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-      const analyticsData = {
-        visits: visits,
-        timestamp: visitTime.toLocaleString(),
-        page: window.location.href,
-        userAgent: navigator.userAgent,
-        platform: navigator.platform,
-        language: navigator.language,
-        screenSize: screen.width + "x" + screen.height
-      };
+  async function runAnalytics() {
+    const ref = doc(db, "analytics", "visits");
 
-      console.log("=== 📊 Website Analytics ===");
-      console.log(analyticsData);
+    try {
+      const snap = await getDoc(ref);
 
-      // Track time spent
+      if (snap.exists()) {
+        await updateDoc(ref, {
+          count: increment(1)
+        });
+      } else {
+        await setDoc(ref, {
+          count: 1
+        });
+      }
+
+      const updatedSnap = await getDoc(ref);
+      const count = updatedSnap.data().count;
+
+      console.log("=== Analytics ===");
+      console.log("Total Visits:", count);
+      console.log("Page:", window.location.href);
+      console.log("Device:", navigator.userAgent);
+      console.log("Screen:", screen.width + "x" + screen.height);
+
+      // Time tracking
       const startTime = Date.now();
       window.addEventListener("beforeunload", () => {
         const timeSpent = Math.round((Date.now() - startTime) / 1000);
-        console.log("⏱ Time spent on page:", timeSpent + " seconds");
+        console.log("⏱ Time on page:", timeSpent + "s");
       });
+
+    } catch (e) {
+      console.error("Analytics error:", e);
     }
-  </script>
+  }
+
+  window.addEventListener("load", runAnalytics);
+</script>
 </body>
 </html>
