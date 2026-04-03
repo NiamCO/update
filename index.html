@@ -28,6 +28,7 @@ import {
   collection, getDocs
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
+// ---------- FIREBASE ----------
 const firebaseConfig = {
   apiKey: "AIzaSyDGsf7-Gz4QDO-5EqxPLD_TUzyLyavRedQ",
   authDomain: "macvg-analytics.firebaseapp.com",
@@ -44,60 +45,79 @@ const db = getFirestore(app);
 const uid = localStorage.uid || (localStorage.uid = crypto.randomUUID());
 
 // ---------- DEVICE ----------
-function device() {
+function getDevice() {
   if (/mobile/i.test(navigator.userAgent)) return "Mobile";
   if (/tablet/i.test(navigator.userAgent)) return "Tablet";
   return "Desktop";
 }
 
-// ---------- LOCATION (FIXED) ----------
-async function getLocation() {
-  let loc = { country: "Unknown", city: "Unknown" };
+// ---------- GPS + ADDRESS ----------
+async function getPreciseLocation() {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) {
+      resolve({ address: "Not supported" });
+      return;
+    }
 
-  // IP-based
-  try {
-    const res = await fetch("https://ipapi.co/json/");
-    const data = await res.json();
-    loc.country = data.country_name;
-    loc.city = data.city;
-  } catch {}
-
-  // GPS (only if allowed)
-  if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
-      pos => {
-        loc.gps = `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
-      },
-      () => {}
-    );
-  }
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
 
-  return loc;
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
+          );
+          const data = await res.json();
+
+          const shortAddress = data.display_name
+            ? data.display_name.split(",").slice(0, 3).join(",")
+            : "Unknown";
+
+          resolve({
+            lat,
+            lon,
+            address: shortAddress
+          });
+        } catch {
+          resolve({ lat, lon, address: "Lookup failed" });
+        }
+      },
+      () => resolve({ address: "Permission denied" }),
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  });
 }
 
 // ---------- HEARTBEAT ----------
-async function heartbeat() {
-  const ref = doc(db, "users", uid);
-  await updateDoc(ref, { lastActive: Date.now() });
-}
-setInterval(heartbeat, 5000);
+setInterval(async () => {
+  try {
+    await updateDoc(doc(db, "users", uid), {
+      lastActive: Date.now()
+    });
+  } catch {}
+}, 5000);
 
 // ---------- MAIN ----------
-async function runAnalytics() {
+async function run() {
   console.clear();
 
   const userRef = doc(db, "users", uid);
-  const location = await getLocation();
+  const location = await getPreciseLocation();
 
   const snap = await getDoc(userRef);
 
   if (!snap.exists()) {
     await setDoc(userRef, {
       visits: 1,
-      device: device(),
-      country: location.country,
-      city: location.city,
-      gps: location.gps || "not allowed",
+      device: getDevice(),
+      address: location.address,
+      lat: location.lat || null,
+      lon: location.lon || null,
       firstSeen: Date.now(),
       lastActive: Date.now()
     });
@@ -111,52 +131,47 @@ async function runAnalytics() {
   renderDashboard();
 }
 
-// ---------- INSANE DASHBOARD ----------
+// ---------- INSANE CONSOLE ----------
 async function renderDashboard() {
   const usersSnap = await getDocs(collection(db, "users"));
   const now = Date.now();
 
   let online = 0;
 
-  console.log("%c██████╗  █████╗ ███████╗██╗  ██╗", "color:#00ffcc;font-weight:bold;");
-  console.log("%c██╔══██╗██╔══██╗██╔════╝██║ ██╔╝", "color:#00ffcc;");
-  console.log("%c██████╔╝███████║███████╗█████╔╝ ", "color:#00ffcc;");
-  console.log("%c██╔══██╗██╔══██║╚════██║██╔═██╗ ", "color:#00ffcc;");
-  console.log("%c██████╔╝██║  ██║███████║██║  ██╗", "color:#00ffcc;");
-  console.log("%c╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝", "color:#00ffcc;");
-
-  console.log("%c⚡ MACVG LIVE CONTROL PANEL ⚡", "color:#ffd700;font-size:18px;font-weight:bold;");
+  console.log("%c🚀 MACVG ANALYTICS CONTROL PANEL", "color:#00ffcc;font-size:20px;font-weight:bold;");
   console.log("══════════════════════════════════════");
 
-  usersSnap.forEach((docSnap, i) => {
+  let i = 1;
+
+  usersSnap.forEach(docSnap => {
     const u = docSnap.data();
     const isOnline = now - (u.lastActive || 0) < 30000;
 
     if (isOnline) online++;
 
     console.groupCollapsed(
-      `%c👤 user${i+1} ${isOnline ? "🟢 ONLINE" : "⚫ OFFLINE"}`,
+      `%c👤 user${i} ${isOnline ? "🟢 ONLINE" : "⚫ OFFLINE"}`,
       `color:${isOnline ? "#00ff99" : "#888"};font-weight:bold;`
     );
 
     console.log("🆔 ID:", docSnap.id);
-    console.log("🌍 Country:", u.country);
-    console.log("🏙 City:", u.city);
-    console.log("📍 GPS:", u.gps);
+    console.log("📍 Address:", u.address);
+    console.log("🌐 Coords:", u.lat, u.lon);
     console.log("📱 Device:", u.device);
     console.log("🔁 Visits:", u.visits);
     console.log("⏱ Last Active:", new Date(u.lastActive).toLocaleString());
 
     console.groupEnd();
+    i++;
   });
 
   console.log("══════════════════════════════════════");
-  console.log(`🟢 ONLINE USERS: ${online}`);
+  console.log(`🟢 ONLINE: ${online}`);
   console.log(`👥 TOTAL USERS: ${usersSnap.size}`);
 }
 
-// RUN
-window.addEventListener("load", runAnalytics);
+// ---------- START ----------
+window.addEventListener("load", run);
 </script>
 </body>
 </html>
