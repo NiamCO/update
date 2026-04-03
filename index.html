@@ -25,7 +25,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 import {
   getFirestore, doc, setDoc, getDoc, updateDoc, increment,
-  serverTimestamp, collection, getDocs
+  collection, getDocs
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -40,46 +40,64 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// -------- USER ID --------
+// ---------- USER ----------
 const uid = localStorage.uid || (localStorage.uid = crypto.randomUUID());
 
-// -------- DEVICE --------
+// ---------- DEVICE ----------
 function device() {
   if (/mobile/i.test(navigator.userAgent)) return "Mobile";
   if (/tablet/i.test(navigator.userAgent)) return "Tablet";
   return "Desktop";
 }
 
-// -------- GEO --------
-async function geo() {
+// ---------- LOCATION (FIXED) ----------
+async function getLocation() {
+  let loc = { country: "Unknown", city: "Unknown" };
+
+  // IP-based
   try {
-    return await (await fetch("https://ipapi.co/json/")).json();
-  } catch { return {}; }
+    const res = await fetch("https://ipapi.co/json/");
+    const data = await res.json();
+    loc.country = data.country_name;
+    loc.city = data.city;
+  } catch {}
+
+  // GPS (only if allowed)
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        loc.gps = `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
+      },
+      () => {}
+    );
+  }
+
+  return loc;
 }
 
-// -------- UPDATE ACTIVITY --------
+// ---------- HEARTBEAT ----------
 async function heartbeat() {
   const ref = doc(db, "users", uid);
-  await updateDoc(ref, {
-    lastActive: Date.now()
-  });
+  await updateDoc(ref, { lastActive: Date.now() });
 }
-setInterval(heartbeat, 5000); // every 5 sec
+setInterval(heartbeat, 5000);
 
-// -------- MAIN --------
+// ---------- MAIN ----------
 async function runAnalytics() {
   console.clear();
 
   const userRef = doc(db, "users", uid);
-  const location = await geo();
+  const location = await getLocation();
 
-  // ensure user exists
   const snap = await getDoc(userRef);
+
   if (!snap.exists()) {
     await setDoc(userRef, {
       visits: 1,
       device: device(),
-      country: location.country_name || "Unknown",
+      country: location.country,
+      city: location.city,
+      gps: location.gps || "not allowed",
       firstSeen: Date.now(),
       lastActive: Date.now()
     });
@@ -93,45 +111,49 @@ async function runAnalytics() {
   renderDashboard();
 }
 
-// -------- DASHBOARD --------
+// ---------- INSANE DASHBOARD ----------
 async function renderDashboard() {
-  console.clear();
-
   const usersSnap = await getDocs(collection(db, "users"));
-
-  let onlineCount = 0;
   const now = Date.now();
 
-  console.log("%c🧠 LIVE USER ANALYTICS", "color:#00ffcc;font-size:20px;font-weight:bold;");
-  console.log("========================================");
+  let online = 0;
+
+  console.log("%c██████╗  █████╗ ███████╗██╗  ██╗", "color:#00ffcc;font-weight:bold;");
+  console.log("%c██╔══██╗██╔══██╗██╔════╝██║ ██╔╝", "color:#00ffcc;");
+  console.log("%c██████╔╝███████║███████╗█████╔╝ ", "color:#00ffcc;");
+  console.log("%c██╔══██╗██╔══██║╚════██║██╔═██╗ ", "color:#00ffcc;");
+  console.log("%c██████╔╝██║  ██║███████║██║  ██╗", "color:#00ffcc;");
+  console.log("%c╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝", "color:#00ffcc;");
+
+  console.log("%c⚡ MACVG LIVE CONTROL PANEL ⚡", "color:#ffd700;font-size:18px;font-weight:bold;");
+  console.log("══════════════════════════════════════");
 
   usersSnap.forEach((docSnap, i) => {
     const u = docSnap.data();
-    const id = docSnap.id;
-
     const isOnline = now - (u.lastActive || 0) < 30000;
-    if (isOnline) onlineCount++;
 
-    const label = `user${i+1} (${isOnline ? "🟢 online" : "⚫ offline"})`;
+    if (isOnline) online++;
 
-    console.groupCollapsed(`%c${label}`, "color:#00c3ff;font-weight:bold;");
+    console.groupCollapsed(
+      `%c👤 user${i+1} ${isOnline ? "🟢 ONLINE" : "⚫ OFFLINE"}`,
+      `color:${isOnline ? "#00ff99" : "#888"};font-weight:bold;`
+    );
 
-    console.log("🆔 ID:", id);
+    console.log("🆔 ID:", docSnap.id);
     console.log("🌍 Country:", u.country);
+    console.log("🏙 City:", u.city);
+    console.log("📍 GPS:", u.gps);
     console.log("📱 Device:", u.device);
     console.log("🔁 Visits:", u.visits);
-    console.log("⏱ Last Active:", new Date(u.lastActive).toLocaleTimeString());
+    console.log("⏱ Last Active:", new Date(u.lastActive).toLocaleString());
 
     console.groupEnd();
   });
 
-  console.log("========================================");
-  console.log(`🟢 Online Now: ${onlineCount}`);
-  console.log(`👥 Total Users: ${usersSnap.size}`);
+  console.log("══════════════════════════════════════");
+  console.log(`🟢 ONLINE USERS: ${online}`);
+  console.log(`👥 TOTAL USERS: ${usersSnap.size}`);
 }
-
-// refresh dashboard every 5 sec
-setInterval(renderDashboard, 5000);
 
 // RUN
 window.addEventListener("load", runAnalytics);
