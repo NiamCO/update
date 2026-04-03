@@ -21,6 +21,99 @@
     <button id="closePopup">Close</button>
   </div>
 
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+
+  <style>
+    body, html {
+      margin: 0;
+      height: 100%;
+      font-family: sans-serif;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* ---------- BLOCKING POPUP ---------- */
+    #locationPopup {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.9);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 999999;
+    }
+
+    .popup-box {
+      background: #111;
+      padding: 40px;
+      border-radius: 20px;
+      text-align: center;
+      color: white;
+      width: 400px;
+      box-shadow: 0 0 40px rgba(0,255,200,0.5);
+    }
+
+    .popup-box h1 {
+      margin-bottom: 10px;
+    }
+
+    .popup-box p {
+      color: #ccc;
+      margin-bottom: 20px;
+    }
+
+    .popup-box button {
+      margin: 10px;
+      padding: 14px 20px;
+      border: none;
+      border-radius: 10px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    #allowBtn {
+      background: #00ffcc;
+    }
+
+    #denyBtn {
+      background: #ff4d4d;
+      color: white;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- MAIN SITE -->
+<iframe src="https://niamco.github.io/macvg"></iframe>
+
+<!-- POPUP -->
+<div id="locationPopup">
+  <div class="popup-box">
+    <h1>📍 Location Access</h1>
+    <p>
+      Allow location to unlock the full experience.<br>
+      This helps improve features and analytics.
+    </p>
+
+    <button id="allowBtn">Allow Location</button>
+    <button id="denyBtn">Continue Without</button>
+  </div>
+</div>
+
+<!-- FIREBASE + ANALYTICS -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 import {
@@ -28,7 +121,6 @@ import {
   collection, getDocs
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
-// ---------- FIREBASE ----------
 const firebaseConfig = {
   apiKey: "AIzaSyDGsf7-Gz4QDO-5EqxPLD_TUzyLyavRedQ",
   authDomain: "macvg-analytics.firebaseapp.com",
@@ -41,88 +133,70 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ---------- USER ----------
 const uid = localStorage.uid || (localStorage.uid = crypto.randomUUID());
 
-// ---------- DEVICE ----------
-function getDevice() {
-  if (/mobile/i.test(navigator.userAgent)) return "Mobile";
-  if (/tablet/i.test(navigator.userAgent)) return "Tablet";
-  return "Desktop";
-}
+let locationData = {
+  address: "Not allowed",
+  lat: null,
+  lon: null
+};
 
-// ---------- GPS + ADDRESS ----------
-async function getPreciseLocation() {
+// ---------- GET LOCATION ----------
+function getLocation() {
   return new Promise((resolve) => {
-    if (!navigator.geolocation) {
-      resolve({ address: "Not supported" });
-      return;
-    }
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
 
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const lat = pos.coords.latitude;
-        const lon = pos.coords.longitude;
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
+        );
+        const data = await res.json();
 
-        try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
-          );
-          const data = await res.json();
+        const address = data.display_name
+          ? data.display_name.split(",").slice(0,3).join(",")
+          : "Unknown";
 
-          const shortAddress = data.display_name
-            ? data.display_name.split(",").slice(0, 3).join(",")
-            : "Unknown";
+        resolve({ lat, lon, address });
 
-          resolve({
-            lat,
-            lon,
-            address: shortAddress
-          });
-        } catch {
-          resolve({ lat, lon, address: "Lookup failed" });
-        }
-      },
-      () => resolve({ address: "Permission denied" }),
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
+      } catch {
+        resolve({ lat, lon, address: "Lookup failed" });
       }
-    );
+
+    }, () => resolve(locationData), {
+      enableHighAccuracy: true
+    });
   });
 }
 
-// ---------- HEARTBEAT ----------
-setInterval(async () => {
-  try {
-    await updateDoc(doc(db, "users", uid), {
-      lastActive: Date.now()
-    });
-  } catch {}
-}, 5000);
+// ---------- BUTTONS ----------
+document.getElementById("allowBtn").onclick = async () => {
+  locationData = await getLocation();
+  startApp();
+};
 
-// ---------- MAIN ----------
-async function run() {
-  console.clear();
+document.getElementById("denyBtn").onclick = () => {
+  startApp();
+};
 
-  const userRef = doc(db, "users", uid);
-  const location = await getPreciseLocation();
+// ---------- START APP ----------
+async function startApp() {
+  document.getElementById("locationPopup").style.display = "none";
 
-  const snap = await getDoc(userRef);
+  const ref = doc(db, "users", uid);
+  const snap = await getDoc(ref);
 
   if (!snap.exists()) {
-    await setDoc(userRef, {
+    await setDoc(ref, {
       visits: 1,
-      device: getDevice(),
-      address: location.address,
-      lat: location.lat || null,
-      lon: location.lon || null,
-      firstSeen: Date.now(),
+      address: locationData.address,
+      lat: locationData.lat,
+      lon: locationData.lon,
       lastActive: Date.now()
     });
   } else {
-    await updateDoc(userRef, {
+    await updateDoc(ref, {
       visits: increment(1),
       lastActive: Date.now()
     });
@@ -131,47 +205,42 @@ async function run() {
   renderDashboard();
 }
 
-// ---------- INSANE CONSOLE ----------
+// ---------- DASHBOARD ----------
 async function renderDashboard() {
-  const usersSnap = await getDocs(collection(db, "users"));
+  console.clear();
+
+  const users = await getDocs(collection(db, "users"));
   const now = Date.now();
 
   let online = 0;
 
-  console.log("%c🚀 MACVG ANALYTICS CONTROL PANEL", "color:#00ffcc;font-size:20px;font-weight:bold;");
-  console.log("══════════════════════════════════════");
+  console.log("%c🚀 MACVG CONTROL PANEL", "color:#00ffcc;font-size:20px;font-weight:bold;");
+  console.log("===================================");
 
   let i = 1;
 
-  usersSnap.forEach(docSnap => {
+  users.forEach(docSnap => {
     const u = docSnap.data();
-    const isOnline = now - (u.lastActive || 0) < 30000;
+    const active = now - (u.lastActive || 0) < 30000;
 
-    if (isOnline) online++;
+    if (active) online++;
 
-    console.groupCollapsed(
-      `%c👤 user${i} ${isOnline ? "🟢 ONLINE" : "⚫ OFFLINE"}`,
-      `color:${isOnline ? "#00ff99" : "#888"};font-weight:bold;`
-    );
-
-    console.log("🆔 ID:", docSnap.id);
-    console.log("📍 Address:", u.address);
-    console.log("🌐 Coords:", u.lat, u.lon);
-    console.log("📱 Device:", u.device);
+    console.groupCollapsed(`👤 user${i} ${active ? "🟢" : "⚫"}`);
+    console.log("📍", u.address);
+    console.log("🌐", u.lat, u.lon);
     console.log("🔁 Visits:", u.visits);
-    console.log("⏱ Last Active:", new Date(u.lastActive).toLocaleString());
-
     console.groupEnd();
+
     i++;
   });
 
-  console.log("══════════════════════════════════════");
-  console.log(`🟢 ONLINE: ${online}`);
-  console.log(`👥 TOTAL USERS: ${usersSnap.size}`);
+  console.log("===================================");
+  console.log("🟢 Online:", online);
+  console.log("👥 Total:", users.size);
 }
-
-// ---------- START ----------
-window.addEventListener("load", run);
 </script>
+
+</body>
+</html>
 </body>
 </html>
