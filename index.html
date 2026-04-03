@@ -23,11 +23,11 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import { 
-  getFirestore, doc, setDoc, getDoc, updateDoc, increment, serverTimestamp, collection, addDoc 
+import {
+  getFirestore, doc, setDoc, getDoc, updateDoc, increment,
+  serverTimestamp, collection, addDoc
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
-// -------- FIREBASE CONFIG --------
 const firebaseConfig = {
   apiKey: "AIzaSyDGsf7-Gz4QDO-5EqxPLD_TUzyLyavRedQ",
   authDomain: "macvg-analytics.firebaseapp.com",
@@ -40,103 +40,108 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// -------- UTIL --------
-function getUserId() {
-  let id = localStorage.getItem("uid");
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem("uid", id);
-  }
-  return id;
-}
+// ---------- UTIL ----------
+const uid = localStorage.uid || (localStorage.uid = crypto.randomUUID());
 
-function getDeviceType() {
-  const ua = navigator.userAgent;
-  if (/mobile/i.test(ua)) return "Mobile";
-  if (/tablet/i.test(ua)) return "Tablet";
+function device() {
+  if (/mobile/i.test(navigator.userAgent)) return "Mobile";
+  if (/tablet/i.test(navigator.userAgent)) return "Tablet";
   return "Desktop";
 }
 
-function isNewSession() {
-  const last = localStorage.getItem("lastVisit");
+function newSession() {
   const now = Date.now();
+  const last = localStorage.lastVisit;
   if (!last || now - last > 30 * 60 * 1000) {
-    localStorage.setItem("lastVisit", now);
+    localStorage.lastVisit = now;
     return true;
   }
-  localStorage.setItem("lastVisit", now);
+  localStorage.lastVisit = now;
   return false;
 }
 
-// -------- GEO --------
-async function getLocation() {
+async function geo() {
   try {
-    const res = await fetch("https://ipapi.co/json/");
-    return await res.json();
-  } catch {
-    return {};
-  }
+    return await (await fetch("https://ipapi.co/json/")).json();
+  } catch { return {}; }
 }
 
-// -------- MAIN ANALYTICS --------
-async function runAnalytics() {
-  const uid = getUserId();
-  const newSession = isNewSession();
-  const today = new Date().toISOString().split("T")[0];
+// ---------- TRACKERS ----------
+let clicks = 0;
+let rageClicks = 0;
+let lastClickTime = 0;
+let scrollMax = 0;
+let firstActionTime = null;
+let idleTime = 0;
+let lastMove = Date.now();
 
+// idle tracker
+setInterval(() => {
+  if (Date.now() - lastMove > 5000) idleTime++;
+}, 1000);
+
+["mousemove","keydown","click"].forEach(e =>
+  document.addEventListener(e, () => lastMove = Date.now())
+);
+
+// scroll depth
+window.addEventListener("scroll", () => {
+  const depth = (window.scrollY + window.innerHeight) / document.body.scrollHeight;
+  scrollMax = Math.max(scrollMax, depth);
+});
+
+// clicks + rage clicks
+document.addEventListener("click", async (e) => {
+  clicks++;
+
+  const now = Date.now();
+  if (now - lastClickTime < 300) rageClicks++;
+  lastClickTime = now;
+
+  if (!firstActionTime) firstActionTime = now;
+
+  await addDoc(collection(db, "events"), {
+    type: "click",
+    x: e.clientX,
+    y: e.clientY,
+    uid,
+    time: serverTimestamp()
+  });
+});
+
+// ---------- MAIN ----------
+async function runAnalytics() {
+  const today = new Date().toISOString().split("T")[0];
   const globalRef = doc(db, "analytics", "global");
   const dailyRef = doc(db, "analytics_daily", today);
   const userRef = doc(db, "users", uid);
 
-  const location = await getLocation();
-  const device = getDeviceType();
-
+  const location = await geo();
+  const isSession = newSession();
   let isNewUser = false;
 
   try {
-    // ---------- ENSURE GLOBAL EXISTS ----------
-    const globalSnap = await getDoc(globalRef);
-    if (!globalSnap.exists()) {
-      await setDoc(globalRef, {
-        totalUsers: 0,
-        sessions: 0,
-        pageViews: 0
-      });
+    // ensure global
+    if (!(await getDoc(globalRef)).exists()) {
+      await setDoc(globalRef, { users:0, sessions:0, views:0 });
     }
 
-    // ---------- USER ----------
+    // user
     const userSnap = await getDoc(userRef);
-
     if (!userSnap.exists()) {
       isNewUser = true;
-
-      await setDoc(userRef, {
-        firstSeen: serverTimestamp(),
-        visits: 1,
-        device,
-        country: location.country_name || "Unknown"
-      });
-
-      await updateDoc(globalRef, { totalUsers: increment(1) });
+      await setDoc(userRef, { firstSeen: serverTimestamp(), visits:1 });
+      await updateDoc(globalRef, { users: increment(1) });
     } else {
-      await updateDoc(userRef, {
-        visits: increment(1),
-        lastSeen: serverTimestamp()
-      });
+      await updateDoc(userRef, { visits: increment(1) });
     }
 
-    // ---------- SESSION ----------
-    if (newSession) {
+    // session
+    if (isSession) {
       await updateDoc(globalRef, { sessions: increment(1) });
 
-      const dailySnap = await getDoc(dailyRef);
-
-      if (!dailySnap.exists()) {
-        await setDoc(dailyRef, {
-          date: today,
-          users: isNewUser ? 1 : 0,
-          sessions: 1
-        });
+      if (!(await getDoc(dailyRef)).exists()) {
+        await setDoc(dailyRef, { users: isNewUser?1:0, sessions:1 });
       } else {
         await updateDoc(dailyRef, {
           sessions: increment(1),
@@ -145,87 +150,76 @@ async function runAnalytics() {
       }
     }
 
-    // ---------- PAGE VIEW ----------
-    await updateDoc(globalRef, { pageViews: increment(1) });
+    // page view
+    await updateDoc(globalRef, { views: increment(1) });
 
-    // ---------- EVENT: PAGE LOAD ----------
-    await addDoc(collection(db, "events"), {
-      type: "page_load",
-      uid,
-      page: window.location.href,
-      device,
-      country: location.country_name,
-      city: location.city,
-      referrer: document.referrer || "direct",
-      time: serverTimestamp()
+    // -------- TIME TRACK --------
+    const start = Date.now();
+    window.addEventListener("beforeunload", async () => {
+      const time = Math.round((Date.now() - start)/1000);
+      const engagement = time + clicks*2;
+
+      await addDoc(collection(db, "events"), {
+        type: "session_end",
+        uid,
+        timeSpent: time,
+        clicks,
+        rageClicks,
+        scrollDepth: Math.round(scrollMax*100),
+        idleTime,
+        engagement,
+        time: serverTimestamp()
+      });
     });
 
-    // ---------- FETCH DATA ----------
-    const globalData = (await getDoc(globalRef)).data();
-    const dailyData = (await getDoc(dailyRef)).data();
+    // -------- DASHBOARD --------
+    const g = (await getDoc(globalRef)).data();
+    const d = (await getDoc(dailyRef)).data();
 
-    // ---------- CONSOLE DASHBOARD ----------
     console.clear();
 
-    console.log("%c📊 MACVG ANALYTICS", "color:#35c895;font-size:20px;font-weight:bold;");
-    console.log("====================================");
+    console.log("%c🚀 MACVG GOD MODE ANALYTICS", "color:#00ffcc;font-size:20px;font-weight:bold;");
+    console.log("======================================");
 
-    console.log("%c👥 USERS", "color:#06b6d4;font-weight:bold;");
-    console.log("Total:", globalData.totalUsers, "| New:", isNewUser);
+    console.log("%c👥 USERS", "color:#00c3ff;font-weight:bold;");
+    console.log("Total:", g.users, "| New:", isNewUser);
 
-    console.log("%c📅 TODAY", "color:#fbbf24;font-weight:bold;");
-    console.log("Users:", dailyData?.users, "| Sessions:", dailyData?.sessions);
+    console.log("%c📅 TODAY", "color:#ffd700;font-weight:bold;");
+    console.log("Users:", d?.users, "| Sessions:", d?.sessions);
 
-    console.log("%c🌍 LOCATION", "color:#a855f7;font-weight:bold;");
+    console.log("%c🌍 LOCATION", "color:#bb86fc;font-weight:bold;");
     console.log(location.country_name, "-", location.city);
 
-    console.log("%c📱 DEVICE", "color:#ef4444;font-weight:bold;");
-    console.log(device);
+    console.log("%c📱 DEVICE", "color:#ff4d4d;font-weight:bold;");
+    console.log(device());
 
-    console.log("%c📄 PAGE", "color:#10b981;font-weight:bold;");
-    console.log("Views:", globalData.pageViews);
+    console.log("%c⚡ ENGAGEMENT", "color:#00ff99;font-weight:bold;");
+    console.log("Clicks:", clicks, "| Rage:", rageClicks);
+    console.log("Scroll:", Math.round(scrollMax*100)+"%");
+    console.log("Idle:", idleTime+"s");
+
+    console.log("%c🧠 BEHAVIOR", "color:#ff7a00;font-weight:bold;");
+    console.log("First Action:", firstActionTime ? ((firstActionTime - performance.timeOrigin)/1000).toFixed(1)+"s" : "none");
+
+    console.log("%c📄 TRAFFIC", "color:#00e1ff;font-weight:bold;");
+    console.log("Views:", g.views);
     console.log("Referrer:", document.referrer || "direct");
 
-  } catch (err) {
-    console.error("Analytics error:", err);
+  } catch (e) {
+    console.error("Analytics error:", e);
   }
-
-  // ---------- TIME TRACK ----------
-  const start = Date.now();
-  window.addEventListener("beforeunload", async () => {
-    const time = Math.round((Date.now() - start) / 1000);
-
-    await addDoc(collection(db, "events"), {
-      type: "time_spent",
-      uid,
-      seconds: time,
-      time: serverTimestamp()
-    });
-  });
-
-  // ---------- CLICK HEATMAP ----------
-  document.addEventListener("click", async (e) => {
-    await addDoc(collection(db, "events"), {
-      type: "click",
-      x: e.clientX,
-      y: e.clientY,
-      page: window.location.href,
-      uid,
-      time: serverTimestamp()
-    });
-  });
 }
 
-// ---------- CUSTOM EVENTS ----------
-window.trackEvent = async function(name, data = {}) {
-  await addDoc(collection(db, "events"), {
-    type: name,
+// custom events
+window.trackEvent = async (name,data={})=>{
+  await addDoc(collection(db,"events"),{
+    type:name,
+    uid,
     ...data,
-    time: serverTimestamp()
+    time:serverTimestamp()
   });
 };
 
-// RUN
 window.addEventListener("load", runAnalytics);
 </script>
 </body>
