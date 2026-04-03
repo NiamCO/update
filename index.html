@@ -7,144 +7,85 @@
   <style>
     html, body { margin: 0; padding: 0; height: 100%; }
     iframe { width: 100%; height: 100%; border: none; }
-
-    /* ---------- EPIC Minecraft Update Overlay ---------- */
-    @keyframes glowPulse {
-      0%, 100% { 
-        box-shadow: 
-          0 0 30px rgba(53, 200, 149, 0.6),
-          0 0 60px rgba(53, 200, 149, 0.4),
-          inset 0 0 20px rgba(53, 200, 149, 0.2);
-      }
-      50% { 
-        box-shadow: 
-          0 0 50px rgba(53, 200, 149, 0.9),
-          0 0 100px rgba(53, 200, 149, 0.6),
-          inset 0 0 30px rgba(53, 200, 149, 0.3);
-      }
-    }
-
-    @keyframes floatAnimation {
-      0%, 100% { transform: translate(-50%, -50%) translateY(0px) scale(1); }
-      50% { transform: translate(-50%, -50%) translateY(-10px) scale(1.02); }
-    }
-
-    @keyframes shimmer {
-      0% { background-position: -200% center; }
-      100% { background-position: 200% center; }
-    }
-
-    @keyframes sparkle {
-      0%, 100% { opacity: 0.3; transform: scale(0.8) rotate(0deg); }
-      50% { opacity: 1; transform: scale(1.2) rotate(180deg); }
-    }
-
-    .overlay {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: linear-gradient(135deg, #0e1434 0%, #1a2147 50%, #0e1434 100%);
-      padding: 40px;
-      width: 420px;
-      border-radius: 20px;
-      text-align: center;
-      z-index: 10000000;
-      border: 3px solid #35c895;
-      animation: glowPulse 2s infinite, floatAnimation 3s ease-in-out infinite;
-      color: #ffffff;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      display: none;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
-    }
-
-    /* (ALL YOUR CSS LEFT EXACTLY THE SAME) */
   </style>
 </head>
 
 <body>
   <iframe src="https://niamco.github.io/macvg"></iframe>
 
-  <div id="gamePopup" class="game-popup">
+  <div id="gamePopup" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);background:#fbbf24;padding:40px;border-radius:20px;text-align:center;transition:0.3s;opacity:0;">
     <h1>🎉 New Game Alert! 🎉</h1>
     <h2>Online Hangman</h2>
-    <p>Self-explanatory and fun! Try to guess the word before the hangman is complete.</p>
-    <a href="https://niamco.github.io/onlinehangman" target="_blank">Play Online Hangman</a>
+    <p>Try to guess the word before the hangman is complete.</p>
+    <a href="https://niamco.github.io/onlinehangman" target="_blank">Play</a><br><br>
     <button id="closePopup">Close</button>
   </div>
 
-  <script>
-    const sidebar = document.getElementById("chatSidebar");
+  <!-- ✅ FIXED FIREBASE ANALYTICS -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } 
+      from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
-    window.addEventListener('load', () => {
-      const popup = document.getElementById('gamePopup');
-      const closeBtn = document.getElementById('closePopup');
+    const firebaseConfig = {
+      apiKey: "AIzaSyDGsf7-Gz4QDO-5EqxPLD_TUzyLyavRedQ",
+      authDomain: "macvg-analytics.firebaseapp.com",
+      projectId: "macvg-analytics",
+      storageBucket: "macvg-analytics.firebasestorage.app",
+      messagingSenderId: "976855922439",
+      appId: "1:976855922439:web:e091863ce7174587db77a2"
+    };
 
-      popup.classList.add('show');
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-      closeBtn.addEventListener('click', () => {
-        popup.classList.remove('show');
-      });
-  </script>
-  <!-- Firebase SDK -->
-<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
+    async function runAnalytics() {
+      try {
+        const ref = doc(db, "analytics", "visits");
+        const snap = await getDoc(ref);
 
-  // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyDGsf7-Gz4QDO-5EqxPLD_TUzyLyavRedQ",
-    authDomain: "macvg-analytics.firebaseapp.com",
-    projectId: "macvg-analytics",
-    storageBucket: "macvg-analytics.firebasestorage.app",
-    messagingSenderId: "976855922439",
-    appId: "1:976855922439:web:e091863ce7174587db77a2"
-  };
+        if (snap.exists()) {
+          await updateDoc(ref, { count: increment(1) });
+        } else {
+          await setDoc(ref, { count: 1 });
+        }
 
+        const updated = await getDoc(ref);
+        const count = updated.data().count;
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+        console.log("=== 🌍 REAL ANALYTICS ===");
+        console.log("Total Visits:", count);
+        console.log("Page:", window.location.href);
+        console.log("Device:", navigator.userAgent);
+        console.log("Screen:", screen.width + "x" + screen.height);
 
-  async function runAnalytics() {
-    const ref = doc(db, "analytics", "visits");
-
-    try {
-      const snap = await getDoc(ref);
-
-      if (snap.exists()) {
-        await updateDoc(ref, {
-          count: increment(1)
+        const start = Date.now();
+        window.addEventListener("beforeunload", () => {
+          const time = Math.round((Date.now() - start) / 1000);
+          console.log("⏱ Time on page:", time + "s");
         });
-      } else {
-        await setDoc(ref, {
-          count: 1
-        });
+
+      } catch (err) {
+        console.error("Firebase error:", err);
       }
-
-      const updatedSnap = await getDoc(ref);
-      const count = updatedSnap.data().count;
-
-      console.log("=== Analytics ===");
-      console.log("Total Visits:", count);
-      console.log("Page:", window.location.href);
-      console.log("Device:", navigator.userAgent);
-      console.log("Screen:", screen.width + "x" + screen.height);
-
-      // Time tracking
-      const startTime = Date.now();
-      window.addEventListener("beforeunload", () => {
-        const timeSpent = Math.round((Date.now() - startTime) / 1000);
-        console.log("⏱ Time on page:", timeSpent + "s");
-      });
-
-    } catch (e) {
-      console.error("Analytics error:", e);
     }
-  }
 
-  window.addEventListener("load", runAnalytics);
-</script>
+    window.addEventListener("load", () => {
+      // popup
+      const popup = document.getElementById("gamePopup");
+      const closeBtn = document.getElementById("closePopup");
+
+      popup.style.transform = "translate(-50%, -50%) scale(1)";
+      popup.style.opacity = "1";
+
+      closeBtn.onclick = () => {
+        popup.style.transform = "translate(-50%, -50%) scale(0)";
+        popup.style.opacity = "0";
+      };
+
+      // analytics
+      runAnalytics();
+    });
+  </script>
 </body>
 </html>
