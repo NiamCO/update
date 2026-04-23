@@ -3,32 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <title>Dashboard</title>
-  <link rel="icon" type="image/x-icon" href="https://du11hjcvx0uqb.cloudfront.net/dist/images/favicon-e10d657a73.ico" />
-  <style>
-    html, body { margin: 0; padding: 0; height: 100%; }
-    iframe { width: 100%; height: 100%; border: none; }
-  </style>
-</head>
-
-<body>
-  <iframe src="https://niamco.github.io/macvg"></iframe>
-
-  <div id="gamePopup" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);background:#fbbf24;padding:40px;border-radius:20px;text-align:center;transition:0.3s;opacity:0;">
-    <h1>🎉 New Game Alert! 🎉</h1>
-    <h2>Online Hangman</h2>
-    <p>Try to guess the word before the hangman is complete.</p>
-    <a href="https://niamco.github.io/onlinehangman" target="_blank">Play</a><br><br>
-    <button id="closePopup">Close</button>
-  </div>
-
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Dashboard</title>
 
   <style>
-    body, html {
+    html, body {
       margin: 0;
       height: 100%;
       font-family: sans-serif;
@@ -40,56 +17,41 @@
       border: none;
     }
 
-    /* ---------- BLOCKING POPUP ---------- */
-    #locationPopup {
+    /* -------- POPUP -------- */
+    #adPopup {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0,0,0,0.9);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 999999;
-    }
-
-    .popup-box {
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
       background: #111;
-      padding: 40px;
-      border-radius: 20px;
-      text-align: center;
       color: white;
-      width: 400px;
-      box-shadow: 0 0 40px rgba(0,255,200,0.5);
+      padding: 30px;
+      border-radius: 16px;
+      text-align: center;
+      z-index: 999999;
+      box-shadow: 0 0 40px rgba(0,255,200,0.4);
+      opacity: 0;
+      transition: all 0.3s ease;
+      width: 320px;
     }
 
-    .popup-box h1 {
-      margin-bottom: 10px;
+    #adPopup h2 {
+      margin: 0 0 10px;
     }
 
-    .popup-box p {
+    #adPopup p {
       color: #ccc;
-      margin-bottom: 20px;
+      font-size: 14px;
     }
 
-    .popup-box button {
-      margin: 10px;
-      padding: 14px 20px;
+    #closeAd {
+      margin-top: 15px;
+      padding: 10px 16px;
       border: none;
-      border-radius: 10px;
+      border-radius: 8px;
+      background: #00ffcc;
       font-weight: bold;
       cursor: pointer;
-      font-size: 16px;
-    }
-
-    #allowBtn {
-      background: #00ffcc;
-    }
-
-    #denyBtn {
-      background: #ff4d4d;
-      color: white;
     }
   </style>
 </head>
@@ -99,28 +61,31 @@
 <!-- MAIN SITE -->
 <iframe src="https://niamco.github.io/macvg"></iframe>
 
-<!-- POPUP -->
-<div id="locationPopup">
-  <div class="popup-box">
-    <h1>📍 Location Access</h1>
-    <p>
-      Allow location to unlock the full experience.<br>
-      This helps improve features and analytics.
-    </p>
+<!-- AD POPUP -->
+<div id="adPopup">
+  <h2>💻 Need a Website?</h2>
 
-    <button id="allowBtn">Allow Location</button>
-    <button id="denyBtn">Continue Without</button>
-  </div>
+  <p>
+    I build clean, custom websites for super cheap.<br><br>
+    💸 Only $1–$3
+  </p>
+
+  <p style="font-size:13px; color:#aaa;">
+    Contact me:<br>
+    <b>niamnangalia@outlook.com</b>
+  </p>
+
+  <button id="closeAd">Got it 👍</button>
 </div>
 
-<!-- FIREBASE + ANALYTICS -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 import {
   getFirestore, doc, setDoc, getDoc, updateDoc, increment,
-  collection, getDocs
+  collection, getDocs, addDoc
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
+// ---------- FIREBASE ----------
 const firebaseConfig = {
   apiKey: "AIzaSyDGsf7-Gz4QDO-5EqxPLD_TUzyLyavRedQ",
   authDomain: "macvg-analytics.firebaseapp.com",
@@ -133,56 +98,42 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// ---------- USER ----------
 const uid = localStorage.uid || (localStorage.uid = crypto.randomUUID());
 
-let locationData = {
-  address: "Not allowed",
-  lat: null,
-  lon: null
-};
+// ---------- TRACKING ----------
+let clicks = 0;
+let rageClicks = 0;
+let lastClick = 0;
+let scrollMax = 0;
+let startTime = Date.now();
 
-// ---------- GET LOCATION ----------
-function getLocation() {
-  return new Promise((resolve) => {
-    navigator.geolocation.getCurrentPosition(async (pos) => {
-      const lat = pos.coords.latitude;
-      const lon = pos.coords.longitude;
+// scroll tracking
+window.addEventListener("scroll", () => {
+  const depth = (window.scrollY + window.innerHeight) / document.body.scrollHeight;
+  scrollMax = Math.max(scrollMax, depth);
+});
 
-      try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
-        );
-        const data = await res.json();
+// click tracking
+document.addEventListener("click", () => {
+  clicks++;
+  const now = Date.now();
+  if (now - lastClick < 300) rageClicks++;
+  lastClick = now;
+});
 
-        const address = data.display_name
-          ? data.display_name.split(",").slice(0,3).join(",")
-          : "Unknown";
-
-        resolve({ lat, lon, address });
-
-      } catch {
-        resolve({ lat, lon, address: "Lookup failed" });
-      }
-
-    }, () => resolve(locationData), {
-      enableHighAccuracy: true
+// heartbeat (online tracking)
+setInterval(async () => {
+  try {
+    await updateDoc(doc(db, "users", uid), {
+      lastActive: Date.now()
     });
-  });
-}
+  } catch {}
+}, 5000);
 
-// ---------- BUTTONS ----------
-document.getElementById("allowBtn").onclick = async () => {
-  locationData = await getLocation();
-  startApp();
-};
-
-document.getElementById("denyBtn").onclick = () => {
-  startApp();
-};
-
-// ---------- START APP ----------
-async function startApp() {
-  document.getElementById("locationPopup").style.display = "none";
+// ---------- MAIN ----------
+async function run() {
+  console.clear();
 
   const ref = doc(db, "users", uid);
   const snap = await getDoc(ref);
@@ -190,9 +141,7 @@ async function startApp() {
   if (!snap.exists()) {
     await setDoc(ref, {
       visits: 1,
-      address: locationData.address,
-      lat: locationData.lat,
-      lon: locationData.lon,
+      firstSeen: Date.now(),
       lastActive: Date.now()
     });
   } else {
@@ -205,42 +154,93 @@ async function startApp() {
   renderDashboard();
 }
 
+// session tracking
+window.addEventListener("beforeunload", async () => {
+  const timeSpent = Math.round((Date.now() - startTime) / 1000);
+
+  await addDoc(collection(db, "sessions"), {
+    uid,
+    timeSpent,
+    clicks,
+    rageClicks,
+    scrollDepth: Math.round(scrollMax * 100),
+    time: Date.now()
+  });
+});
+
 // ---------- DASHBOARD ----------
 async function renderDashboard() {
-  console.clear();
+  const usersSnap = await getDocs(collection(db, "users"));
+  const sessionsSnap = await getDocs(collection(db, "sessions"));
 
-  const users = await getDocs(collection(db, "users"));
   const now = Date.now();
-
   let online = 0;
+  let totalClicks = 0;
+  let totalTime = 0;
 
-  console.log("%c🚀 MACVG CONTROL PANEL", "color:#00ffcc;font-size:20px;font-weight:bold;");
-  console.log("===================================");
+  sessionsSnap.forEach(doc => {
+    const s = doc.data();
+    totalClicks += s.clicks || 0;
+    totalTime += s.timeSpent || 0;
+  });
+
+  console.log("%c🚀 MACVG ANALYTICS HUB", "color:#00ffcc;font-size:20px;font-weight:bold;");
+  console.log("══════════════════════════════════════");
 
   let i = 1;
 
-  users.forEach(docSnap => {
+  usersSnap.forEach(docSnap => {
     const u = docSnap.data();
     const active = now - (u.lastActive || 0) < 30000;
 
     if (active) online++;
 
-    console.groupCollapsed(`👤 user${i} ${active ? "🟢" : "⚫"}`);
-    console.log("📍", u.address);
-    console.log("🌐", u.lat, u.lon);
-    console.log("🔁 Visits:", u.visits);
-    console.groupEnd();
+    console.groupCollapsed(
+      `%c👤 user${i} ${active ? "🟢 ONLINE" : "⚫ OFFLINE"}`,
+      `color:${active ? "#00ff99" : "#888"};font-weight:bold;`
+    );
 
+    console.log("🆔 ID:", docSnap.id);
+    console.log("🔁 Visits:", u.visits);
+    console.log("⏱ Last Active:", new Date(u.lastActive).toLocaleTimeString());
+
+    console.groupEnd();
     i++;
   });
 
-  console.log("===================================");
+  console.log("══════════════════════════════════════");
+
+  console.log("%c📊 GLOBAL STATS", "color:#ffd700;font-weight:bold;");
+  console.log("👥 Total Users:", usersSnap.size);
   console.log("🟢 Online:", online);
-  console.log("👥 Total:", users.size);
+  console.log("🖱 Total Clicks:", totalClicks);
+  console.log("⏱ Total Time:", totalTime + "s");
+
+  console.log("%c⚡ YOUR SESSION", "color:#00e1ff;font-weight:bold;");
+  console.log("Clicks:", clicks);
+  console.log("Rage Clicks:", rageClicks);
+  console.log("Scroll Depth:", Math.round(scrollMax * 100) + "%");
 }
+
+// ---------- POPUP ----------
+if (!localStorage.seenAd) {
+  setTimeout(() => {
+    const popup = document.getElementById("adPopup");
+    popup.style.opacity = "1";
+    popup.style.transform = "translate(-50%,-50%) scale(1)";
+    localStorage.seenAd = "true";
+  }, 3000);
+}
+
+document.getElementById("closeAd").onclick = () => {
+  const popup = document.getElementById("adPopup");
+  popup.style.opacity = "0";
+  popup.style.transform = "translate(-50%,-50%) scale(0.8)";
+};
+
+// START
+window.addEventListener("load", run);
 </script>
 
-</body>
-</html>
 </body>
 </html>
