@@ -1,245 +1,183 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Dashboard</title>
+<meta charset="UTF-8">
+<title>Dashboard</title>
 
-  <style>
-    html, body {
-      margin: 0;
-      height: 100%;
-      font-family: sans-serif;
-    }
+<style>
+html, body {
+  margin:0;
+  height:100%;
+  background:black;
+  font-family:'Segoe UI',sans-serif;
+  overflow:hidden;
+}
 
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-    }
+iframe {
+  width:100%;
+  height:100%;
+  border:none;
+}
 
-    /* -------- POPUP -------- */
-    #adPopup {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) scale(0.8);
-      background: #111;
-      color: white;
-      padding: 30px;
-      border-radius: 16px;
-      text-align: center;
-      z-index: 999999;
-      box-shadow: 0 0 40px rgba(0,255,200,0.4);
-      opacity: 0;
-      transition: all 0.3s ease;
-      width: 320px;
-    }
+/* ---------- CINEMATIC OVERLAY ---------- */
+#vault {
+  position:fixed;
+  inset:0;
+  background:radial-gradient(circle at center, #050505 0%, #000 80%);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  z-index:999999;
+  color:white;
+  text-align:center;
+}
 
-    #adPopup h2 {
-      margin: 0 0 10px;
-    }
+/* FLASH */
+#flash {
+  position:fixed;
+  inset:0;
+  background:white;
+  opacity:1;
+  z-index:1000000;
+  animation:flashOut 1.2s forwards;
+}
+@keyframes flashOut {
+  to { opacity:0; pointer-events:none; }
+}
 
-    #adPopup p {
-      color: #ccc;
-      font-size: 14px;
-    }
+/* PARTICLES */
+.particle {
+  position:absolute;
+  width:4px;
+  height:4px;
+  background:#00ffcc;
+  border-radius:50%;
+  opacity:0.6;
+  animation:float 6s infinite linear;
+}
+@keyframes float {
+  from { transform:translateY(100vh) scale(0.5); }
+  to { transform:translateY(-10vh) scale(1.2); }
+}
 
-    #closeAd {
-      margin-top: 15px;
-      padding: 10px 16px;
-      border: none;
-      border-radius: 8px;
-      background: #00ffcc;
-      font-weight: bold;
-      cursor: pointer;
-    }
-  </style>
+/* TITLE */
+.title {
+  font-size:90px;
+  font-weight:900;
+  letter-spacing:6px;
+  color:#00ffcc;
+  text-shadow:
+    0 0 20px #00ffcc,
+    0 0 60px #00ffcc,
+    0 0 120px rgba(0,255,200,0.8);
+  animation:pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%,100% { transform:scale(1); }
+  50% { transform:scale(1.05); }
+}
+
+/* TEXT */
+.text {
+  opacity:0;
+  transform:translateY(30px);
+  font-size:26px;
+  margin-top:20px;
+  animation:fadeUp 1s forwards;
+}
+
+@keyframes fadeUp {
+  to { opacity:1; transform:translateY(0); }
+}
+
+/* BUTTON */
+.btn {
+  margin-top:40px;
+  padding:18px 36px;
+  font-size:20px;
+  border:none;
+  border-radius:14px;
+  background:linear-gradient(135deg,#00ffcc,#00c2a8);
+  color:black;
+  font-weight:900;
+  cursor:pointer;
+  box-shadow:
+    0 0 20px #00ffcc,
+    0 0 60px rgba(0,255,200,0.7);
+  transition:0.2s;
+}
+
+.btn:hover {
+  transform:scale(1.1);
+}
+
+/* SKIP */
+.skip {
+  margin-top:20px;
+  color:#888;
+  cursor:pointer;
+  font-size:14px;
+}
+</style>
 </head>
 
 <body>
 
-<!-- MAIN SITE -->
 <iframe src="https://niamco.github.io/macvg"></iframe>
 
-<!-- AD POPUP -->
-<div id="adPopup">
-  <h2>💻 Need a Website?</h2>
+<div id="flash"></div>
 
-  <p>
-    I build clean, custom websites for super cheap.<br><br>
-    💸 Only $1–$3
-  </p>
+<div id="vault">
 
-  <p style="font-size:13px; color:#aaa;">
-    Contact me:<br>
-    <b>niamnangalia@outlook.com</b>
-  </p>
+  <!-- PARTICLES -->
+  <div id="particles"></div>
 
-  <button id="closeAd">Got it 👍</button>
+  <div class="title">THE VAULT</div>
+
+  <div class="text" style="animation-delay:1.5s;">A new era begins.</div>
+
+  <div class="text" style="animation-delay:2.5s;">10,000+ hours of work.</div>
+
+  <div class="text" style="animation-delay:3.5s;">2,021 games.</div>
+
+  <div class="text" style="animation-delay:4.5s;">
+    I give you... <b>The Vault.</b>
+  </div>
+
+  <div class="text" style="animation-delay:5.5s;">
+    And yes... Geometry Dash is in here 💀
+  </div>
+
+  <button class="btn" style="animation-delay:6.5s;"
+    onclick="window.open('https://niamco.github.io/urwelcome','_blank')">
+    ENTER THE VAULT →
+  </button>
+
+  <div class="skip" onclick="closeVault()">skip</div>
+
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import {
-  getFirestore, doc, setDoc, getDoc, updateDoc, increment,
-  collection, getDocs, addDoc
-} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
-
-// ---------- FIREBASE ----------
-const firebaseConfig = {
-  apiKey: "AIzaSyDGsf7-Gz4QDO-5EqxPLD_TUzyLyavRedQ",
-  authDomain: "macvg-analytics.firebaseapp.com",
-  projectId: "macvg-analytics",
-  storageBucket: "macvg-analytics.firebasestorage.app",
-  messagingSenderId: "976855922439",
-  appId: "1:976855922439:web:e091863ce7174587db77a2"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// ---------- USER ----------
-const uid = localStorage.uid || (localStorage.uid = crypto.randomUUID());
-
-// ---------- TRACKING ----------
-let clicks = 0;
-let rageClicks = 0;
-let lastClick = 0;
-let scrollMax = 0;
-let startTime = Date.now();
-
-// scroll tracking
-window.addEventListener("scroll", () => {
-  const depth = (window.scrollY + window.innerHeight) / document.body.scrollHeight;
-  scrollMax = Math.max(scrollMax, depth);
-});
-
-// click tracking
-document.addEventListener("click", () => {
-  clicks++;
-  const now = Date.now();
-  if (now - lastClick < 300) rageClicks++;
-  lastClick = now;
-});
-
-// heartbeat (online tracking)
-setInterval(async () => {
-  try {
-    await updateDoc(doc(db, "users", uid), {
-      lastActive: Date.now()
-    });
-  } catch {}
-}, 5000);
-
-// ---------- MAIN ----------
-async function run() {
-  console.clear();
-
-  const ref = doc(db, "users", uid);
-  const snap = await getDoc(ref);
-
-  if (!snap.exists()) {
-    await setDoc(ref, {
-      visits: 1,
-      firstSeen: Date.now(),
-      lastActive: Date.now()
-    });
-  } else {
-    await updateDoc(ref, {
-      visits: increment(1),
-      lastActive: Date.now()
-    });
-  }
-
-  renderDashboard();
+<script>
+// particles generator
+const container = document.getElementById("particles");
+for(let i=0;i<80;i++){
+  const p = document.createElement("div");
+  p.className="particle";
+  p.style.left=Math.random()*100+"vw";
+  p.style.animationDuration=(4+Math.random()*4)+"s";
+  p.style.opacity=Math.random();
+  container.appendChild(p);
 }
 
-// session tracking
-window.addEventListener("beforeunload", async () => {
-  const timeSpent = Math.round((Date.now() - startTime) / 1000);
-
-  await addDoc(collection(db, "sessions"), {
-    uid,
-    timeSpent,
-    clicks,
-    rageClicks,
-    scrollDepth: Math.round(scrollMax * 100),
-    time: Date.now()
-  });
-});
-
-// ---------- DASHBOARD ----------
-async function renderDashboard() {
-  const usersSnap = await getDocs(collection(db, "users"));
-  const sessionsSnap = await getDocs(collection(db, "sessions"));
-
-  const now = Date.now();
-  let online = 0;
-  let totalClicks = 0;
-  let totalTime = 0;
-
-  sessionsSnap.forEach(doc => {
-    const s = doc.data();
-    totalClicks += s.clicks || 0;
-    totalTime += s.timeSpent || 0;
-  });
-
-  console.log("%c🚀 MACVG ANALYTICS HUB", "color:#00ffcc;font-size:20px;font-weight:bold;");
-  console.log("══════════════════════════════════════");
-
-  let i = 1;
-
-  usersSnap.forEach(docSnap => {
-    const u = docSnap.data();
-    const active = now - (u.lastActive || 0) < 30000;
-
-    if (active) online++;
-
-    console.groupCollapsed(
-      `%c👤 user${i} ${active ? "🟢 ONLINE" : "⚫ OFFLINE"}`,
-      `color:${active ? "#00ff99" : "#888"};font-weight:bold;`
-    );
-
-    console.log("🆔 ID:", docSnap.id);
-    console.log("🔁 Visits:", u.visits);
-    console.log("⏱ Last Active:", new Date(u.lastActive).toLocaleTimeString());
-
-    console.groupEnd();
-    i++;
-  });
-
-  console.log("══════════════════════════════════════");
-
-  console.log("%c📊 GLOBAL STATS", "color:#ffd700;font-weight:bold;");
-  console.log("👥 Total Users:", usersSnap.size);
-  console.log("🟢 Online:", online);
-  console.log("🖱 Total Clicks:", totalClicks);
-  console.log("⏱ Total Time:", totalTime + "s");
-
-  console.log("%c⚡ YOUR SESSION", "color:#00e1ff;font-weight:bold;");
-  console.log("Clicks:", clicks);
-  console.log("Rage Clicks:", rageClicks);
-  console.log("Scroll Depth:", Math.round(scrollMax * 100) + "%");
+// close
+function closeVault(){
+  document.getElementById("vault").style.display="none";
 }
 
-// ---------- POPUP ----------
-if (!localStorage.seenAd) {
-  setTimeout(() => {
-    const popup = document.getElementById("adPopup");
-    popup.style.opacity = "1";
-    popup.style.transform = "translate(-50%,-50%) scale(1)";
-    localStorage.seenAd = "true";
-  }, 3000);
-}
-
-document.getElementById("closeAd").onclick = () => {
-  const popup = document.getElementById("adPopup");
-  popup.style.opacity = "0";
-  popup.style.transform = "translate(-50%,-50%) scale(0.8)";
-};
-
-// START
-window.addEventListener("load", run);
+// auto close after 10s
+setTimeout(closeVault, 10000);
 </script>
 
 </body>
