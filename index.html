@@ -19,7 +19,7 @@ iframe {
   border:none;
 }
 
-/* ---------- CINEMATIC OVERLAY ---------- */
+/* ---------- OVERLAY ---------- */
 #vault {
   position:fixed;
   inset:0;
@@ -33,48 +33,18 @@ iframe {
   text-align:center;
 }
 
-/* FLASH */
-#flash {
-  position:fixed;
-  inset:0;
-  background:white;
-  opacity:1;
-  z-index:1000000;
-  animation:flashOut 1.2s forwards;
-}
-@keyframes flashOut {
-  to { opacity:0; pointer-events:none; }
-}
-
-/* PARTICLES */
-.particle {
-  position:absolute;
-  width:4px;
-  height:4px;
-  background:#00ffcc;
-  border-radius:50%;
-  opacity:0.6;
-  animation:float 6s infinite linear;
-}
-@keyframes float {
-  from { transform:translateY(100vh) scale(0.5); }
-  to { transform:translateY(-10vh) scale(1.2); }
-}
-
 /* TITLE */
 .title {
   font-size:90px;
   font-weight:900;
-  letter-spacing:6px;
   color:#00ffcc;
   text-shadow:
-    0 0 20px #00ffcc,
-    0 0 60px #00ffcc,
-    0 0 120px rgba(0,255,200,0.8);
-  animation:pulse 2s infinite;
+    0 0 30px #00ffcc,
+    0 0 100px rgba(0,255,200,0.8);
+  animation:titlePulse 3s infinite;
 }
 
-@keyframes pulse {
+@keyframes titlePulse {
   0%,100% { transform:scale(1); }
   50% { transform:scale(1.05); }
 }
@@ -82,30 +52,29 @@ iframe {
 /* TEXT */
 .text {
   opacity:0;
-  transform:translateY(30px);
+  transform:translateY(50px) scale(0.95);
   font-size:26px;
   margin-top:20px;
-  animation:fadeUp 1s forwards;
+  transition:all 1.5s cubic-bezier(.2,.8,.2,1);
 }
 
-@keyframes fadeUp {
-  to { opacity:1; transform:translateY(0); }
+.text.show {
+  opacity:1;
+  transform:translateY(0) scale(1);
 }
 
 /* BUTTON */
 .btn {
   margin-top:40px;
-  padding:18px 36px;
-  font-size:20px;
+  padding:16px 30px;
+  font-size:18px;
   border:none;
-  border-radius:14px;
-  background:linear-gradient(135deg,#00ffcc,#00c2a8);
+  border-radius:12px;
+  background:#00ffcc;
   color:black;
   font-weight:900;
   cursor:pointer;
-  box-shadow:
-    0 0 20px #00ffcc,
-    0 0 60px rgba(0,255,200,0.7);
+  box-shadow:0 0 20px #00ffcc;
   transition:0.2s;
 }
 
@@ -113,12 +82,33 @@ iframe {
   transform:scale(1.1);
 }
 
-/* SKIP */
-.skip {
-  margin-top:20px;
-  color:#888;
-  cursor:pointer;
-  font-size:14px;
+/* FINAL SCREEN */
+#finalScreen {
+  display:none;
+}
+
+.bigFinal {
+  font-size:52px;
+  font-weight:900;
+  color:#00ffcc;
+  text-shadow:0 0 40px #00ffcc;
+  opacity:0;
+  transform:scale(0.8);
+  transition:all 1.5s ease;
+}
+
+.bigFinal.show {
+  opacity:1;
+  transform:scale(1.05);
+}
+
+/* VIDEO */
+video {
+  margin-top:30px;
+  width:70%;
+  max-width:800px;
+  border-radius:16px;
+  box-shadow:0 0 40px rgba(0,255,200,0.4);
 }
 </style>
 </head>
@@ -127,57 +117,71 @@ iframe {
 
 <iframe src="https://niamco.github.io/macvg"></iframe>
 
-<div id="flash"></div>
-
 <div id="vault">
-
-  <!-- PARTICLES -->
-  <div id="particles"></div>
 
   <div class="title">THE VAULT</div>
 
-  <div class="text" style="animation-delay:1.5s;">A new era begins.</div>
+  <div class="text" id="t1">A new era begins.</div>
+  <div class="text" id="t2">10,000+ hours of work.</div>
+  <div class="text" id="t3">2,021 games.</div>
+  <div class="text" id="t4">I give you... The Vault.</div>
 
-  <div class="text" style="animation-delay:2.5s;">10,000+ hours of work.</div>
+  <button class="btn" id="nextBtn">Next →</button>
 
-  <div class="text" style="animation-delay:3.5s;">2,021 games.</div>
+  <!-- FINAL SCREEN -->
+  <div id="finalScreen">
 
-  <div class="text" style="animation-delay:4.5s;">
-    I give you... <b>The Vault.</b>
+    <div class="bigFinal" id="finalText">
+      WELCOME TO THE BIGGEST UPDATE OF YOUR LIFE
+    </div>
+
+    <div class="text show" style="margin-top:30px;">
+      Huge thanks to that one kid who asked for Geometry Dash 💀
+    </div>
+
+    <!-- VIDEO -->
+    <video controls>
+      <source src="tut.mp4" type="video/mp4">
+      Your browser does not support video.
+    </video>
+
+    <button class="btn" style="margin-top:30px;"
+      onclick="window.open('https://drive.google.com/drive/folders/1c750lq8RBDmLXTZEUgA0TYGZsdMd7Zne?usp=sharing','_blank')">
+      ENTER THE VAULT →
+    </button>
+
   </div>
-
-  <div class="text" style="animation-delay:5.5s;">
-    And yes... Geometry Dash is in here 💀
-  </div>
-
-  <button class="btn" style="animation-delay:6.5s;"
-    onclick="window.open('https://drive.google.com/drive/folders/1c750lq8RBDmLXTZEUgA0TYGZsdMd7Zne','_blank')">
-    ENTER THE VAULT →
-  </button>
-
-  <div class="skip" onclick="closeVault()">skip</div>
 
 </div>
 
 <script>
-// particles generator
-const container = document.getElementById("particles");
-for(let i=0;i<80;i++){
-  const p = document.createElement("div");
-  p.className="particle";
-  p.style.left=Math.random()*100+"vw";
-  p.style.animationDuration=(4+Math.random()*4)+"s";
-  p.style.opacity=Math.random();
-  container.appendChild(p);
-}
+let step = 0;
 
-// close
-function closeVault(){
-  document.getElementById("vault").style.display="none";
-}
+const texts = [
+  document.getElementById("t1"),
+  document.getElementById("t2"),
+  document.getElementById("t3"),
+  document.getElementById("t4")
+];
 
-// auto close after 10s
-setTimeout(closeVault, 10000);
+const nextBtn = document.getElementById("nextBtn");
+
+nextBtn.onclick = () => {
+  if (step < texts.length) {
+    texts[step].classList.add("show");
+    step++;
+  } else {
+    document.querySelectorAll(".text").forEach(t => t.style.display="none");
+    nextBtn.style.display = "none";
+
+    const final = document.getElementById("finalScreen");
+    final.style.display = "block";
+
+    setTimeout(() => {
+      document.getElementById("finalText").classList.add("show");
+    }, 100);
+  }
+};
 </script>
 
 </body>
