@@ -110,6 +110,27 @@ video {
   border-radius:16px;
   box-shadow:0 0 40px rgba(0,255,200,0.4);
 }
+  /* Responsive Google Drive video */
+.videoWrapper {
+  position: relative;
+  width: 70%;
+  max-width: 800px;
+  padding-bottom: 39.375%; /* 16:9 ratio (9/16 = 0.5625) but scaled for 70% width */
+  margin-top: 30px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 0 40px rgba(0,255,200,0.4);
+}
+
+.videoWrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
 </style>
 </head>
 
@@ -140,7 +161,14 @@ video {
     </div>
 
     <!-- VIDEO -->
-    <iframe src="https://drive.google.com/file/d/1PutLuva2yMsOiyt6HJGjagyII4bfl69f/preview" width="640" height="480"></iframe>
+  <!-- RESPONSIVE VIDEO WRAPPER -->
+<div class="videoWrapper">
+  <iframe 
+    src="https://drive.google.com/file/d/1PutLuva2yMsOiyt6HJGjagyII4bfl69f/preview"
+    allow="autoplay"
+  ></iframe>
+</div>
+
 
     <button class="btn" style="margin-top:30px;"
       onclick="window.open('https://drive.google.com/drive/folders/1c750lq8RBDmLXTZEUgA0TYGZsdMd7Zne?usp=sharing','_blank')">
