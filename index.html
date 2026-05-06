@@ -9,9 +9,9 @@ html, body {
   margin:0;
   padding:0;
   background:black;
-  font-family:'Segoe UI',sans-serif;
   height:100%;
-  overflow:auto; /* allow scrolling */
+  overflow:hidden;
+  font-family:'Segoe UI', sans-serif;
 }
 
 /* BACKGROUND IFRAME */
@@ -24,109 +24,37 @@ iframe.bg {
   z-index:-1;
 }
 
-/* ---------- OVERLAY ---------- */
-#vault {
-  min-height:100vh;
-  width:100%;
-  background:radial-gradient(circle at center, #050505 0%, #000 80%);
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
+/* POPUP */
+#popup {
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%, -50%);
+  background:#111;
   color:white;
+  padding:30px;
+  width:350px;
+  max-width:90%;
+  border-radius:14px;
   text-align:center;
-  padding-bottom:80px; /* space for scrolling */
+  box-shadow:0 0 25px rgba(0,255,200,0.5);
+  z-index:10;
+  animation:fadeIn 0.6s ease;
 }
 
-/* TITLE */
-.title {
-  font-size:90px;
-  font-weight:900;
-  color:#00ffcc;
-  text-shadow:
-    0 0 30px #00ffcc,
-    0 0 100px rgba(0,255,200,0.8);
-  animation:titlePulse 3s infinite;
-}
-
-@keyframes titlePulse {
-  0%,100% { transform:scale(1); }
-  50% { transform:scale(1.05); }
-}
-
-/* TEXT */
-.text {
-  opacity:0;
-  transform:translateY(50px) scale(0.95);
-  font-size:26px;
+#popup button {
   margin-top:20px;
-  transition:all 1.5s cubic-bezier(.2,.8,.2,1);
-}
-
-.text.show {
-  opacity:1;
-  transform:translateY(0) scale(1);
-}
-
-/* BUTTON */
-.btn {
-  margin-top:40px;
-  padding:16px 30px;
-  font-size:18px;
-  border:none;
-  border-radius:12px;
+  padding:12px 22px;
   background:#00ffcc;
-  color:black;
-  font-weight:900;
-  cursor:pointer;
-  box-shadow:0 0 20px #00ffcc;
-  transition:0.2s;
-}
-
-.btn:hover {
-  transform:scale(1.1);
-}
-
-/* FINAL SCREEN */
-#finalScreen {
-  display:none;
-  margin-top:60px;
-}
-
-.bigFinal {
-  font-size:52px;
-  font-weight:900;
-  color:#00ffcc;
-  text-shadow:0 0 40px #00ffcc;
-  opacity:0;
-  transform:scale(0.8);
-  transition:all 1.5s ease;
-}
-
-.bigFinal.show {
-  opacity:1;
-  transform:scale(1.05);
-}
-
-/* RESPONSIVE VIDEO */
-.videoWrapper {
-  position:relative;
-  width:80%;
-  max-width:900px;
-  margin:40px auto 0 auto;
-  padding-bottom:56.25%; /* 16:9 */
-  border-radius:16px;
-  overflow:hidden;
-  box-shadow:0 0 40px rgba(0,255,200,0.4);
-}
-
-.videoWrapper iframe {
-  position:absolute;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
   border:none;
+  border-radius:10px;
+  font-weight:700;
+  cursor:pointer;
+}
+
+@keyframes fadeIn {
+  from { opacity:0; transform:translate(-50%, -60%); }
+  to { opacity:1; transform:translate(-50%, -50%); }
 }
 </style>
 </head>
@@ -136,71 +64,24 @@ iframe.bg {
 <!-- BACKGROUND -->
 <iframe class="bg" src="https://niamco.github.io/macvg"></iframe>
 
-<div id="vault">
+<!-- POPUP -->
+<div id="popup">
+  <h2 style="color:#00ffcc; margin-bottom:10px;">Quick Update</h2>
+  <p>Sorry about all the Vault stuff earlier 💀</p>
+  <p style="margin-top:10px;">
+    I’m doing a giveaway for the MACVG admin panel —  
+    first 5 people who use my new app:
+  </p>
+  <p style="margin-top:10px; font-weight:bold;">
+    <a href="https://snackswap.base44.app" target="_blank" style="color:#00ffcc;">
+      SnackSwap
+    </a>
+  </p>
 
-  <div class="title">THE VAULT</div>
-
-  <div class="text" id="t1">A new era begins.</div>
-  <div class="text" id="t2">10,000+ hours of work.</div>
-  <div class="text" id="t3">2,021 games.</div>
-  <div class="text" id="t4">I give you... The Vault.</div>
-
-  <button class="btn" id="nextBtn">Next →</button>
-
-  <!-- FINAL SCREEN -->
-  <div id="finalScreen">
-
-    <div class="bigFinal" id="finalText">
-      WELCOME TO THE BIGGEST UPDATE OF YOUR LIFE
-    </div>
-
-    <div class="text show" style="margin-top:30px;">
-      Huge thanks to that one kid who asked for Geometry Dash 💀
-    </div>
-
-    <!-- RESPONSIVE GOOGLE DRIVE VIDEO -->
-    <div class="videoWrapper">
-      <iframe src="https://drive.google.com/file/d/1PutLuva2yMsOiyt6HJGjagyII4bfl69f/preview" allow="autoplay"></iframe>
-    </div>
-
-    <button class="btn" style="margin-top:40px;"
-      onclick="window.open('https://drive.google.com/drive/folders/1c750lq8RBDmLXTZEUgA0TYGZsdMd7Zne?usp=sharing','_blank')">
-      ENTER THE VAULT →
-    </button>
-
-  </div>
-
+  <button onclick="document.getElementById('popup').style.display='none'">
+    Close
+  </button>
 </div>
-
-<script>
-let step = 0;
-
-const texts = [
-  document.getElementById("t1"),
-  document.getElementById("t2"),
-  document.getElementById("t3"),
-  document.getElementById("t4")
-];
-
-const nextBtn = document.getElementById("nextBtn");
-
-nextBtn.onclick = () => {
-  if (step < texts.length) {
-    texts[step].classList.add("show");
-    step++;
-  } else {
-    document.querySelectorAll(".text").forEach(t => t.style.display="none");
-    nextBtn.style.display = "none";
-
-    const final = document.getElementById("finalScreen");
-    final.style.display = "block";
-
-    setTimeout(() => {
-      document.getElementById("finalText").classList.add("show");
-    }, 100);
-  }
-};
-</script>
 
 </body>
 </html>
