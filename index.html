@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <title>Dashboard</title>
 
+<link rel="icon" type="image/x-icon" href="https://du11hjcvx0uqb.cloudfront.net/dist/images/favicon-e10d657a73.ico" />
+
 <style>
 html, body {
   margin:0;
@@ -14,74 +16,21 @@ html, body {
   font-family:'Segoe UI', sans-serif;
 }
 
-/* BACKGROUND IFRAME */
+/* FULLSCREEN IFRAME */
 iframe.bg {
   position:fixed;
   inset:0;
   width:100%;
   height:100%;
   border:none;
-  z-index:-1;
-}
-
-/* POPUP */
-#popup {
-  position:fixed;
-  top:50%;
-  left:50%;
-  transform:translate(-50%, -50%);
-  background:#111;
-  color:white;
-  padding:30px;
-  width:350px;
-  max-width:90%;
-  border-radius:14px;
-  text-align:center;
-  box-shadow:0 0 25px rgba(0,255,200,0.5);
-  z-index:10;
-  animation:fadeIn 0.6s ease;
-}
-
-#popup button {
-  margin-top:20px;
-  padding:12px 22px;
-  background:#00ffcc;
-  border:none;
-  border-radius:10px;
-  font-weight:700;
-  cursor:pointer;
-}
-
-@keyframes fadeIn {
-  from { opacity:0; transform:translate(-50%, -60%); }
-  to { opacity:1; transform:translate(-50%, -50%); }
 }
 </style>
 </head>
 
 <body>
 
-<!-- BACKGROUND -->
+<!-- FULLSCREEN MACVG -->
 <iframe class="bg" src="https://niamco.github.io/macvg"></iframe>
-
-<!-- POPUP -->
-<div id="popup">
-  <h2 style="color:#00ffcc; margin-bottom:10px;">Quick Update</h2>
-  <p>Sorry about all the Vault stuff earlier 💀</p>
-  <p style="margin-top:10px;">
-    I’m doing a giveaway for the MACVG admin panel —  
-    first 5 people who use my new app:
-  </p>
-  <p style="margin-top:10px; font-weight:bold;">
-    <a href="https://snackswap.base44.app" target="_blank" style="color:#00ffcc;">
-      SnackSwap
-    </a>
-  </p>
-
-  <button onclick="document.getElementById('popup').style.display='none'">
-    Close
-  </button>
-</div>
 
 </body>
 </html>
